@@ -1,0 +1,463 @@
+<!DOCTYPE html>
+<html lang="uk">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Weather API - Прогноз погоди</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            padding: 20px;
+        }
+
+        .container {
+            max-width: 1200px;
+            margin: 0 auto;
+            background: rgba(255, 255, 255, 0.95);
+            border-radius: 20px;
+            box-shadow: 0 20px 40px rgba(0, 0, 0, 0.1);
+            overflow: hidden;
+        }
+
+        .header {
+            background: linear-gradient(135deg, #4facfe 0%, #00f2fe 100%);
+            color: white;
+            padding: 30px;
+            text-align: center;
+        }
+
+        .header h1 {
+            font-size: 2.5em;
+            margin-bottom: 10px;
+            text-shadow: 2px 2px 4px rgba(0, 0, 0, 0.3);
+        }
+
+        .header p {
+            font-size: 1.2em;
+            opacity: 0.9;
+        }
+
+        .form-section {
+            padding: 40px;
+            background: white;
+        }
+
+        .form-group {
+            margin-bottom: 25px;
+        }
+
+        .form-group label {
+            display: block;
+            margin-bottom: 8px;
+            font-weight: 600;
+            color: #333;
+            font-size: 1.1em;
+        }
+
+        .form-group input,
+        .form-group select {
+            width: 100%;
+            padding: 15px;
+            border: 2px solid #e1e5e9;
+            border-radius: 10px;
+            font-size: 1em;
+            transition: all 0.3s ease;
+        }
+
+        .form-group input:focus,
+        .form-group select:focus {
+            outline: none;
+            border-color: #4facfe;
+            box-shadow: 0 0 0 3px rgba(79, 172, 254, 0.1);
+        }
+
+        .form-row {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 20px;
+        }
+
+        .btn {
+            background: linear-gradient(135deg, #4facfe 0%, #00f2fe 100%);
+            color: white;
+            border: none;
+            padding: 15px 30px;
+            border-radius: 10px;
+            font-size: 1.1em;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            box-shadow: 0 4px 15px rgba(79, 172, 254, 0.3);
+        }
+
+        .btn:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 6px 20px rgba(79, 172, 254, 0.4);
+        }
+
+        .btn:active {
+            transform: translateY(0);
+        }
+
+        .loading {
+            display: none;
+            text-align: center;
+            padding: 20px;
+        }
+
+        .spinner {
+            border: 4px solid #f3f3f3;
+            border-top: 4px solid #4facfe;
+            border-radius: 50%;
+            width: 40px;
+            height: 40px;
+            animation: spin 1s linear infinite;
+            margin: 0 auto 10px;
+        }
+
+        @keyframes spin {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+        }
+
+        .error {
+            background: #ffebee;
+            color: #c62828;
+            padding: 15px;
+            border-radius: 10px;
+            margin: 20px 0;
+            border-left: 4px solid #c62828;
+            display: none;
+        }
+
+        .results {
+            display: none;
+            padding: 40px;
+            background: #f8f9fa;
+        }
+
+        .current-weather {
+            background: white;
+            border-radius: 15px;
+            padding: 30px;
+            margin-bottom: 30px;
+            box-shadow: 0 5px 15px rgba(0, 0, 0, 0.1);
+        }
+
+        .current-weather h2 {
+            color: #333;
+            margin-bottom: 20px;
+            font-size: 1.8em;
+        }
+
+        .weather-info {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            gap: 20px;
+        }
+
+        .weather-item {
+            text-align: center;
+            padding: 20px;
+            background: #f8f9fa;
+            border-radius: 10px;
+        }
+
+        .weather-item .value {
+            font-size: 2em;
+            font-weight: bold;
+            color: #4facfe;
+            margin-bottom: 5px;
+        }
+
+        .weather-item .label {
+            color: #666;
+            font-size: 0.9em;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+        }
+
+        .forecast {
+            background: white;
+            border-radius: 15px;
+            padding: 30px;
+            box-shadow: 0 5px 15px rgba(0, 0, 0, 0.1);
+        }
+
+        .forecast h2 {
+            color: #333;
+            margin-bottom: 20px;
+            font-size: 1.8em;
+        }
+
+        .forecast-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+            gap: 20px;
+        }
+
+        .forecast-day {
+            background: #f8f9fa;
+            border-radius: 10px;
+            padding: 20px;
+            text-align: center;
+            transition: transform 0.3s ease;
+        }
+
+        .forecast-day:hover {
+            transform: translateY(-5px);
+        }
+
+        .forecast-day .date {
+            font-weight: bold;
+            color: #333;
+            margin-bottom: 10px;
+        }
+
+        .forecast-day .temp-range {
+            font-size: 1.5em;
+            color: #4facfe;
+            margin-bottom: 10px;
+        }
+
+        .forecast-day .condition {
+            color: #666;
+            font-size: 0.9em;
+        }
+
+        .api-info {
+            background: #e3f2fd;
+            padding: 20px;
+            border-radius: 10px;
+            margin-top: 30px;
+            border-left: 4px solid #2196f3;
+        }
+
+        .api-info h3 {
+            color: #1976d2;
+            margin-bottom: 10px;
+        }
+
+        .api-info p {
+            color: #424242;
+            line-height: 1.6;
+        }
+
+        @media (max-width: 768px) {
+            .form-row {
+                grid-template-columns: 1fr;
+            }
+            
+            .weather-info {
+                grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
+            }
+            
+            .forecast-grid {
+                grid-template-columns: 1fr;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="header">
+            <h1>🌤️ Weather API</h1>
+            <p>Прогноз погоди для будь-якого міста світу</p>
+        </div>
+
+        <div class="form-section">
+            <form id="weatherForm">
+                <div class="form-row">
+                    <div class="form-group">
+                        <label for="city">Місто *</label>
+                        <input type="text" id="city" name="city" placeholder="Наприклад: Kyiv, London, Tokyo" required>
+                    </div>
+                    <div class="form-group">
+                        <label for="country">Країна (опціонально)</label>
+                        <input type="text" id="country" name="country" placeholder="Наприклад: UA, US, JP">
+                    </div>
+                </div>
+
+                <div class="form-row">
+                    <div class="form-group">
+                        <label for="days">Кількість днів прогнозу</label>
+                        <select id="days" name="days">
+                            <option value="1">Сьогодні</option>
+                            <option value="3">3 дні</option>
+                            <option value="5" selected>5 днів</option>
+                            <option value="7">7 днів</option>
+                            <option value="10">10 днів</option>
+                        </select>
+                    </div>
+                    <div class="form-group">
+                        <label for="temperature_unit">Одиниця температури</label>
+                        <select id="temperature_unit" name="temperature_unit">
+                            <option value="celsius" selected>Цельсій (°C)</option>
+                            <option value="fahrenheit">Фаренгейт (°F)</option>
+                        </select>
+                    </div>
+                </div>
+
+                <button type="submit" class="btn">🔍 Отримати прогноз погоди</button>
+            </form>
+
+            <div class="loading" id="loading">
+                <div class="spinner"></div>
+                <p>Завантаження даних...</p>
+            </div>
+
+            <div class="error" id="error"></div>
+        </div>
+
+        <div class="results" id="results">
+            <div class="current-weather" id="currentWeather"></div>
+            <div class="forecast" id="forecast"></div>
+            
+        </div>
+    </div>
+
+    <script>
+        document.getElementById('weatherForm').addEventListener('submit', async function(e) {
+            e.preventDefault();
+            
+            const city = document.getElementById('city').value.trim();
+            const country = document.getElementById('country').value.trim();
+            const days = document.getElementById('days').value;
+            const temperatureUnit = document.getElementById('temperature_unit').value;
+            
+            if (!city) {
+                showError('Будь ласка, введіть назву міста');
+                return;
+            }
+
+            showLoading();
+            hideError();
+            hideResults();
+
+            try {
+                // Get current weather
+                const currentWeatherUrl = `/weather?city=${encodeURIComponent(city)}${country ? '&country=' + encodeURIComponent(country) : ''}&temperature_unit=${temperatureUnit}`;
+                const currentResponse = await fetch(currentWeatherUrl);
+                const currentData = await currentResponse.json();
+
+                if (!currentData.success) {
+                    throw new Error(currentData.error);
+                }
+
+                // Get forecast
+                const forecastUrl = `/weather/forecast?city=${encodeURIComponent(city)}${country ? '&country=' + encodeURIComponent(country) : ''}&days=${days}&temperature_unit=${temperatureUnit}`;
+                const forecastResponse = await fetch(forecastUrl);
+                const forecastData = await forecastResponse.json();
+
+                if (!forecastData.success) {
+                    throw new Error(forecastData.error);
+                }
+
+                displayResults(currentData.data, forecastData.data, temperatureUnit);
+                
+            } catch (error) {
+                showError('Помилка при отриманні даних: ' + error.message);
+            } finally {
+                hideLoading();
+            }
+        });
+
+        function showLoading() {
+            document.getElementById('loading').style.display = 'block';
+        }
+
+        function hideLoading() {
+            document.getElementById('loading').style.display = 'none';
+        }
+
+        function showError(message) {
+            const errorDiv = document.getElementById('error');
+            errorDiv.textContent = message;
+            errorDiv.style.display = 'block';
+        }
+
+        function hideError() {
+            document.getElementById('error').style.display = 'none';
+        }
+
+        function hideResults() {
+            document.getElementById('results').style.display = 'none';
+        }
+
+        function displayResults(currentWeather, forecast, temperatureUnit) {
+            const resultsDiv = document.getElementById('results');
+            const currentWeatherDiv = document.getElementById('currentWeather');
+            const forecastDiv = document.getElementById('forecast');
+
+            // Display current weather
+            const tempUnit = temperatureUnit === 'fahrenheit' ? '°F' : '°C';
+            currentWeatherDiv.innerHTML = `
+                <h2>🌡️ Поточна погода в ${currentWeather.city}, ${currentWeather.country}</h2>
+                <div class="weather-info">
+                    <div class="weather-item">
+                        <div class="value">${currentWeather.temperature}${tempUnit}</div>
+                        <div class="label">Температура</div>
+                    </div>
+                    <div class="weather-item">
+                        <div class="value">${currentWeather.feels_like}${tempUnit}</div>
+                        <div class="label">Відчувається як</div>
+                    </div>
+                    <div class="weather-item">
+                        <div class="value">${currentWeather.humidity}%</div>
+                        <div class="label">Вологість</div>
+                    </div>
+                    <div class="weather-item">
+                        <div class="value">${currentWeather.pressure} hPa</div>
+                        <div class="label">Тиск</div>
+                    </div>
+                    <div class="weather-item">
+                        <div class="value">${currentWeather.wind_speed} м/с</div>
+                        <div class="label">Швидкість вітру</div>
+                    </div>
+                    <div class="weather-item">
+                        <div class="value">${currentWeather.description}</div>
+                        <div class="label">Опис</div>
+                    </div>
+                </div>
+            `;
+
+            // Display forecast
+            let forecastHtml = '<h2>📅 Прогноз погоди</h2><div class="forecast-grid">';
+            
+            Object.values(forecast).forEach(day => {
+                const date = new Date(day.date);
+                const dayName = date.toLocaleDateString('uk-UA', { weekday: 'long' });
+                const formattedDate = date.toLocaleDateString('uk-UA');
+                
+                forecastHtml += `
+                    <div class="forecast-day">
+                        <div class="date">${dayName}<br>${formattedDate}</div>
+                        <div class="temp-range">${day.min_temp}${tempUnit} - ${day.max_temp}${tempUnit}</div>
+                        <div class="condition">${day.main_condition}</div>
+                        <div style="margin-top: 10px; font-size: 0.8em; color: #999;">
+                            Вологість: ${day.avg_humidity}%<br>
+                            Тиск: ${day.avg_pressure} hPa
+                        </div>
+                    </div>
+                `;
+            });
+            
+            forecastHtml += '</div>';
+            forecastDiv.innerHTML = forecastHtml;
+
+            resultsDiv.style.display = 'block';
+        }
+
+        // Auto-focus on city input
+        document.getElementById('city').focus();
+    </script>
+</body>
+</html>
