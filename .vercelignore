@@ -1,0 +1,10 @@
+node_modules
+vendor
+logs
+*.log
+config.env
+composer.json
+composer.lock
+examples.php
+src/
+index.php

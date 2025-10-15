@@ -1,0 +1,117 @@
+<!DOCTYPE html>
+<html lang="uk">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Test Weather API</title>
+    <style>
+        body { font-family: Arial, sans-serif; padding: 20px; }
+        .test-section { margin: 20px 0; padding: 20px; border: 1px solid #ccc; border-radius: 5px; }
+        .result { background: #f5f5f5; padding: 10px; margin: 10px 0; border-radius: 3px; }
+        .error { background: #ffebee; color: #c62828; }
+        .success { background: #e8f5e8; color: #2e7d32; }
+        button { padding: 10px 20px; margin: 5px; background: #007cba; color: white; border: none; border-radius: 3px; cursor: pointer; }
+        button:hover { background: #005a87; }
+        input { padding: 8px; margin: 5px; border: 1px solid #ccc; border-radius: 3px; }
+    </style>
+</head>
+<body>
+    <h1>Тест Weather API</h1>
+    
+    <div class="test-section">
+        <h2>Тест поточної погоди</h2>
+        <input type="text" id="city1" placeholder="Місто" value="Kyiv">
+        <input type="text" id="country1" placeholder="Країна" value="UA">
+        <button onclick="testCurrentWeather()">Тест поточної погоди</button>
+        <div id="currentResult" class="result"></div>
+    </div>
+
+    <div class="test-section">
+        <h2>Тест прогнозу погоди</h2>
+        <input type="text" id="city2" placeholder="Місто" value="Kyiv">
+        <input type="text" id="country2" placeholder="Країна" value="UA">
+        <input type="number" id="days" placeholder="Дні" value="5" min="1" max="10">
+        <button onclick="testForecast()">Тест прогнозу</button>
+        <div id="forecastResult" class="result"></div>
+    </div>
+
+    <script>
+        async function testCurrentWeather() {
+            const city = document.getElementById('city1').value;
+            const country = document.getElementById('country1').value;
+            const resultDiv = document.getElementById('currentResult');
+            
+            try {
+                const url = `/weather?city=${encodeURIComponent(city)}${country ? '&country=' + encodeURIComponent(country) : ''}`;
+                resultDiv.innerHTML = 'Завантаження...';
+                
+                const response = await fetch(url);
+                const data = await response.json();
+                
+                if (data.success) {
+                    resultDiv.className = 'result success';
+                    resultDiv.innerHTML = `
+                        <strong>Успішно!</strong><br>
+                        Місто: ${data.data.city}, ${data.data.country}<br>
+                        Температура: ${data.data.temperature}°C<br>
+                        Відчувається як: ${data.data.feels_like}°C<br>
+                        Вологість: ${data.data.humidity}%<br>
+                        Тиск: ${data.data.pressure} hPa<br>
+                        Вітер: ${data.data.wind_speed} м/с<br>
+                        Опис: ${data.data.description}
+                    `;
+                } else {
+                    resultDiv.className = 'result error';
+                    resultDiv.innerHTML = `<strong>Помилка:</strong> ${data.error}`;
+                }
+            } catch (error) {
+                resultDiv.className = 'result error';
+                resultDiv.innerHTML = `<strong>Помилка:</strong> ${error.message}`;
+            }
+        }
+
+        async function testForecast() {
+            const city = document.getElementById('city2').value;
+            const country = document.getElementById('country2').value;
+            const days = document.getElementById('days').value;
+            const resultDiv = document.getElementById('forecastResult');
+            
+            try {
+                const url = `/weather/forecast?city=${encodeURIComponent(city)}${country ? '&country=' + encodeURIComponent(country) : ''}&days=${days}`;
+                resultDiv.innerHTML = 'Завантаження...';
+                
+                const response = await fetch(url);
+                const data = await response.json();
+                
+                if (data.success) {
+                    resultDiv.className = 'result success';
+                    let html = '<strong>Успішно!</strong><br>Прогноз погоди:<br>';
+                    
+                    Object.values(data.data).forEach(day => {
+                        const date = new Date(day.date);
+                        const dayName = date.toLocaleDateString('uk-UA', { weekday: 'long' });
+                        const formattedDate = date.toLocaleDateString('uk-UA');
+                        
+                        html += `
+                            <div style="margin: 10px 0; padding: 10px; background: white; border-radius: 3px;">
+                                <strong>${dayName} (${formattedDate})</strong><br>
+                                Температура: ${day.min_temp}°C - ${day.max_temp}°C<br>
+                                Умови: ${day.main_condition}<br>
+                                Вологість: ${day.avg_humidity}% | Тиск: ${day.avg_pressure} hPa
+                            </div>
+                        `;
+                    });
+                    
+                    resultDiv.innerHTML = html;
+                } else {
+                    resultDiv.className = 'result error';
+                    resultDiv.innerHTML = `<strong>Помилка:</strong> ${data.error}`;
+                }
+            } catch (error) {
+                resultDiv.className = 'result error';
+                resultDiv.innerHTML = `<strong>Помилка:</strong> ${error.message}`;
+            }
+        }
+    </script>
+</body>
+</html>
